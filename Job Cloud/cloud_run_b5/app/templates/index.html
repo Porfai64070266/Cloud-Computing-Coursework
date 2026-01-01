@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>BigQuery Query Runner</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    table { border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #ccc; padding: 4px 8px; font-size: 13px; }
+    th { background: #f0f0f0; }
+    .query-block { margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <h1>BigQuery Query Runner (Cloud Run)</h1>
+  <form method="POST">
+    <label for="query_key">Choose Query:</label>
+    <select name="query_key" id="query_key">
+      {% for key, meta in queries.items() %}
+        <option value="{{ key }}" {% if key == selected_key %}selected{% endif %}>{{ meta.label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Run</button>
+  </form>
+
+  <p style="margin-top:8px;color:#666;">
+    Tip: ตั้งค่า env vars บน Cloud Run เพื่อใช้ dataset จริงจาก Jump Start เช่น
+    BQ_TABLE_ORDER_ITEMS, BQ_TABLE_ORDERS, BQ_TABLE_EVENTS
+  </p>
+
+  {% if selected_key %}
+    <h2>Results for: {{ queries[selected_key].label }}</h2>
+    {% if rows %}
+      <table>
+        <thead>
+          <tr>
+            {% for col in rows[0].keys() %}
+              <th>{{ col }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              {% for v in r.values() %}
+                <td>{{ v }}</td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No rows returned.</p>
+    {% endif %}
+  {% endif %}
+</body>
+</html>

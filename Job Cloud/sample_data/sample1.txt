@@ -1,0 +1,3 @@
+Hello world! This is a simple example file.
+It contains a few sentences. Some sentences start with the same word.
+Hello again. Testing sentence boundaries? Yes! It should work well.
