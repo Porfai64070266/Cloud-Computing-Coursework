@@ -1,0 +1,237 @@
+# Guide to Deploying BigQuery Jump Start Solution
+## Overview
+This document provides guidance on how to use Google Cloud Platform (GCP) Jump Start Solutions to deploy a Data Warehouse with an integrated Looker Studio Dashboard automatically, as an alternative to manually creating datasets and dashboards.
+
+### Step 1: Deploy Jump Start Solution
+1. Open ten Jump Start Solutions Console
+Method 1: Via Cloud Console
+
+Open https://console.cloud.google.com
+Click the ☰ menu (top-left corner)
+Scroll down to Solutions → Jump Start Solutions
+
+Method 2: Direct Access
+
+URL: https://console.cloud.google.com/solutions
+2. Select Data Warehouse Solution
+On the All products page, click Jump Start Solutions
+Search for: "Data warehouse" or "data-warehouse"
+Select the solution "Data warehouse with BigQuery"
+Review the solution details:
+Creates a BigQuery dataset with sample data
+Generates a Looker Studio dashboard template
+Includes a tutorial for usage and exploration
+3. Deploy Solution
+Click the "DEPLOY" button (Top-right corner)
+Compete the deployment configuration:
+Deployment name: data-warehouse (This name will appear under Solution deployments)
+Location: us-central1 or asia-southeast1
+Project: profound-maker-477917-r0
+Click "DEPLOY"
+Wait approximately 5-10 minutes while the deployment progress bar completes
+4. Verify Deployment Status
+Navigate to Solutions → Solution deployments
+Confirm that data-warehouse shows:
+Status: Deployed (green checkmark)
+Location: us-central1
+Deployment date: deployment timestamp
+Products: BigQuery, Looker Studio
+
+
+### Step 2: Open Looker Studio Dashboard
+1. Access Deployment Details
+In Solution deployments, click "data-warehouse"
+The Deployment details page will display:
+OPEN BIGQUERY EDITOR
+VIEW LOOKER STUDIO DASHBOARD
+RESOURCES tab: Workflows, Cloud, and BigQuery resources
+2. Open the Dashboard
+Click"VIEW LOOKER STUDIO DASHBOARD"
+The dashboard opens in a new Looker  Studio tab
+The landing page is tiled "E-Commerce Business Pulse"
+3. Explore the Dashboard
+Page 1: Top-Line Business Pulse
+
+Scorecards:
+Revenue: 4,987 (↑ 167.0%)
+Inventory Costs: 2,395 (↓ 166.6%)
+Profit: 1,868 (↑ 92.7%)
+Line Chart: Revenue Year over Year (2019-2023)
+
+Page 2: Distribution Center Efficiency
+Shipping metrics
+Return rates
+Location analysis
+Navigation:
+
+Use the left-hand sidebar to switch between pages
+Date filters are available at the top of the dashboard
+
+
+### Step 3: Customising Dashboard
+1. Create a Copy of the Dashboard
+In Looker Studio, click "Edit and share"
+If the dashboard is non-editable template, select "Make a copy"
+Rename the dashboard to "COMM034 Retail Analytics – Revenue & Customer Insights"
+2. Rename Dashboard and Add Subtitle
+Click the dashboard title
+Change the title to: COMM034 Retail Analytics – Revenue & Customer Insights
+Add a subtitle: "Data from BigQuery Jump Start: thelook_ecommerce"
+3. Add Custom Pages (from B3 Queries)
+Page 3: Monthly Revenue by Category
+Click "Add a page"
+Page title: "Monthly Revenue"
+Add a Data Source:
+Resource → Add data → BigQuery → Custom Query
+Paste SQL from B3.md Query 1:
+
+SELECT
+
+    FORMAT_TIMESTAMP('%Y-%m', oi.created_at) AS month,
+
+    p.category AS category,
+
+    ROUND(SUM(oi.sale_price), 2) AS revenue
+
+FROM `bigquery-public-data.thelook_ecommerce.order_items` oi
+
+LEFT JOIN `bigquery-public-data.thelook_ecommerce.products` p
+
+    ON oi.product_id = p.id
+
+WHERE oi.created_at >= '2024-01-01' AND oi.created_at < '2024-06-01'
+
+GROUP BY month, category
+
+ORDER BY month DESC, revenue DESC
+
+LIMIT 20
+
+Add Stacked Bar Chart:
+Dimension: month
+Breakdown Dimension: category
+Metric: revenue
+Page 4: Top 10 Customers
+Add page → "Top Customers"
+Custom Query (from B3.md Query 2):
+
+SELECT
+
+    oi.user_id,
+
+    ROUND(SUM(oi.sale_price), 2) AS lifetime_spend
+
+FROM `bigquery-public-data.thelook_ecommerce.order_items` oi
+
+GROUP BY user_id
+
+ORDER BY lifetime_spend DESC
+
+LIMIT 10
+
+Add a Table:
+Columns: user_id, lifetime_spend
+Add Scorecards:
+Top Customer Spend: MAX(lifetime_spend)
+Average: AVG(lifetime_spend)
+Count: COUNT(user_id)
+Page 5: Conversion Funnel
+Add page → "Conversion Funnel"
+Custom Query (from B3.md Query 3):
+
+WITH views AS (
+
+    SELECT FORMAT_TIMESTAMP('%Y-%m', created_at) AS month, 
+
+           COUNT(*) AS view_events
+
+    FROM `bigquery-public-data.thelook_ecommerce.events`
+
+    WHERE event_type = 'product'
+
+      AND created_at >= '2024-01-01' AND created_at < '2024-06-01'
+
+    GROUP BY month
+
+), purchases AS (
+
+    SELECT FORMAT_TIMESTAMP('%Y-%m', created_at) AS month, 
+
+           COUNT(*) AS purchase_events
+
+    FROM `bigquery-public-data.thelook_ecommerce.events`
+
+    WHERE event_type = 'purchase'
+
+      AND created_at >= '2024-01-01' AND created_at < '2024-06-01'
+
+    GROUP BY month
+
+)
+
+SELECT v.month,
+
+       v.view_events,
+
+       p.purchase_events,
+
+       ROUND(SAFE_DIVIDE(p.purchase_events, v.view_events), 4) AS conversion_rate
+
+FROM views v
+
+LEFT JOIN purchases p USING (month)
+
+ORDER BY v.month DESC
+
+Add Combo Chart:
+Dimension: month
+Metric 1: view_events (Line)
+Metric 2: purchase_events (Line)
+Metric 3: conversion_rate (Bars)
+
+
+### Step 4: Capture Screenshots
+B4 Report
+b4_page1_revenue_chart.png: Monthly Revenue (custom page)
+b4_page2_top_customers.png: Top Customers table
+b4_page3_conversion_funnel.png: Conversion Funnel
+Video Demo
+c_looker_page1.png: E-Commerce Business Pulse (Jump Start template)
+c_looker_page2.png: Distribution Center Efficiency
+c_looker_page3.png: Custom Monthly Revenue page
+
+
+Alternative Choice: Using a Custom Dataset (comm034_retail)
+If comm034_retail is used instead of the Jump Start dataset:
+1. Update the Looker Studio data Source
+Resource → Manage added data sources
+คลิกที่ data source → Edit
+เปลี่ยน Custom Query:
+From: bigquery-public-data.thelook_ecommerce.*
+To: profound-maker-477917-r0.comm034_retail.*
+Note: Remove WHERE filter, as comm034_retail contains fewer records.
+2. SQL for comm034_retail
+Refer to comments in B3.md, for example:
+
+-- Custom dataset version:
+
+-- FROM `profound-maker-477917-r0.comm034_retail.order_items` oi
+
+-- LEFT JOIN `profound-maker-477917-r0.comm034_retail.products` p ...
+
+
+Checklist หลัง Deploy
+Jump Start solution deployed successfully (status: Deployed)
+Looker Studio dashboard open correctly
+"E-Commerce Business Pulse" page display valid data
+Make a copy dashboard and renamed
+Three custom pages added from B3 queries
+All screenshots captured
+Filters and date range controls tested
+
+
+Resources
+Jump Start Solutions: https://console.cloud.google.com/solutions
+Solution Deployments: https://console.cloud.google.com/solutions/deployments
+BigQuery Editor: via "OPEN BIGQUERY EDITOR" on the deployment page
+Looker Studio: via "VIEW LOOKER STUDIO DASHBOARD"
